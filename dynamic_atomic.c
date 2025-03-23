@@ -43,7 +43,7 @@ int main() {
     int num_tests = sizeof(thread_counts) / sizeof(thread_counts[0]);
 
     // Define dynamic scheduling chunk sizes
-    int chunk_sizes[] = {16384, 65536, 262144}; // 16K, 64K, 256K
+    int chunk_sizes[] = {32768, 65536, 131072}; // 32K, 64K, 128K
     int num_chunks = sizeof(chunk_sizes) / sizeof(chunk_sizes[0]);
 
     // Run tests for dynamic scheduling with different chunk sizes
