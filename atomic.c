@@ -19,18 +19,18 @@ void generate_data(int *data, int size) {
     }
 }
 
-
-// Function to compute histogram using static scheduling with chunk sizes
-void compute_histogram_static(int *data, int *histogram, int size, int num_threads, int chunk_size) {
+// Function to compute histogram using atomic updates
+void compute_histogram_atomic(int *data, int *histogram, int size, int num_threads) {
     #pragma omp parallel num_threads(num_threads)
     {
-        #pragma omp for schedule(static, chunk_size)
+        #pragma omp for
         for (int i = 0; i < size; i++) {
             #pragma omp atomic
-            histogram[data[i]]++;
+            histogram[data[i]]++; // Atomic update to avoid race conditions
         }
     }
 }
+
 
 int main() {
     int *data = (int *)malloc(DATA_SIZE * sizeof(int));
@@ -47,25 +47,20 @@ int main() {
     int chunk_sizes[] = {32768, 65536, 131072}; // 32K, 64K, 128K
     int num_chunks = sizeof(chunk_sizes) / sizeof(chunk_sizes[0]);
 
-    // Run tests for static scheduling with different chunk sizes
-    printf("\n--- Histogram Computation using Static Scheduling ---\n");
-    for (int c = 0; c < num_chunks; c++) {
-        int chunk_size = chunk_sizes[c];
-        printf("\n-- Chunk Size: %d --\n", chunk_size);
+    // Run tests for atomic version
+    printf("\n--- Histogram Computation using Atomic Updates ---\n");
+    for (int t = 0; t < num_tests; t++) {
+        int num_threads = thread_counts[t];
 
-        for (int t = 0; t < num_tests; t++) {
-            int num_threads = thread_counts[t];
+        printf("\nThreads: %d | Atomic Execution Times:\n", num_threads);
+        for (int run = 0; run < NUM_RUNS; run++) {
+            for (int i = 0; i < RANGE; i++) histogram[i] = 0; // Reset histogram
 
-            printf("\nThreads: %d | Static Execution Times (Chunk Size %d):\n", num_threads, chunk_size);
-            for (int run = 0; run < NUM_RUNS; run++) {
-                for (int i = 0; i < RANGE; i++) histogram[i] = 0; // Reset histogram
+            double start = omp_get_wtime();
+            compute_histogram_atomic(data, histogram, DATA_SIZE, num_threads);
+            double end = omp_get_wtime();
 
-                double start = omp_get_wtime();
-                compute_histogram_static(data, histogram, DATA_SIZE, num_threads, chunk_size);
-                double end = omp_get_wtime();
-
-                printf("%f\n", end - start); // Print each execution time
-            }
+            printf("%f\n", end - start); // Print each execution time
         }
     }
 

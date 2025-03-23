@@ -19,12 +19,11 @@ void generate_data(int *data, int size) {
     }
 }
 
-
-// Function to compute histogram using static scheduling with chunk sizes
-void compute_histogram_static(int *data, int *histogram, int size, int num_threads, int chunk_size) {
+// Function to compute histogram using dynamic scheduling with chunk sizes
+void compute_histogram_dynamic(int *data, int *histogram, int size, int num_threads, int chunk_size) {
     #pragma omp parallel num_threads(num_threads)
     {
-        #pragma omp for schedule(static, chunk_size)
+        #pragma omp for schedule(dynamic, chunk_size)
         for (int i = 0; i < size; i++) {
             #pragma omp atomic
             histogram[data[i]]++;
@@ -43,12 +42,12 @@ int main() {
     int thread_counts[] = {2, 4, 6, 8, 12, 16};
     int num_tests = sizeof(thread_counts) / sizeof(thread_counts[0]);
 
-    // Define static scheduling chunk sizes
-    int chunk_sizes[] = {32768, 65536, 131072}; // 32K, 64K, 128K
+    // Define dynamic scheduling chunk sizes
+    int chunk_sizes[] = {16384, 65536, 262144}; // 16K, 64K, 256K
     int num_chunks = sizeof(chunk_sizes) / sizeof(chunk_sizes[0]);
 
-    // Run tests for static scheduling with different chunk sizes
-    printf("\n--- Histogram Computation using Static Scheduling ---\n");
+    // Run tests for dynamic scheduling with different chunk sizes
+    printf("\n--- Histogram Computation using Dynamic Scheduling ---\n");
     for (int c = 0; c < num_chunks; c++) {
         int chunk_size = chunk_sizes[c];
         printf("\n-- Chunk Size: %d --\n", chunk_size);
@@ -56,12 +55,12 @@ int main() {
         for (int t = 0; t < num_tests; t++) {
             int num_threads = thread_counts[t];
 
-            printf("\nThreads: %d | Static Execution Times (Chunk Size %d):\n", num_threads, chunk_size);
+            printf("\nThreads: %d | Dynamic Execution Times (Chunk Size %d):\n", num_threads, chunk_size);
             for (int run = 0; run < NUM_RUNS; run++) {
                 for (int i = 0; i < RANGE; i++) histogram[i] = 0; // Reset histogram
 
                 double start = omp_get_wtime();
-                compute_histogram_static(data, histogram, DATA_SIZE, num_threads, chunk_size);
+                compute_histogram_dynamic(data, histogram, DATA_SIZE, num_threads, chunk_size);
                 double end = omp_get_wtime();
 
                 printf("%f\n", end - start); // Print each execution time
