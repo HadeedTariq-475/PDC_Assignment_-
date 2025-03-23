@@ -7,8 +7,13 @@
 #define RANGE 256            // Histogram range
 
 void generate_data(int *data, int size) {
-    for (int i = 0; i < size; i++) {
-        data[i] = rand() % RANGE; // Random numbers within range
+    #pragma omp parallel
+    {
+        unsigned int seed = time(NULL) ^ omp_get_thread_num(); // Unique seed for each thread
+        #pragma omp for
+        for (int i = 0; i < size; i++) {
+            data[i] = rand_r(&seed) % RANGE; // Thread-safe random number
+        }
     }
 }
 
